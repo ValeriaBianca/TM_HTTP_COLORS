@@ -73,19 +73,6 @@ Colors= {
 
     }
 
-#----------------------------------------------------------------------------------------------------------------------
-#-- Undistort and rectify images before giving them to the ORB algorithm to process
-#-- Use camera parameters PREVIOUSLY evaluated by stereo calibration script
-cv_file = cv2.FileStorage()
-cv_file.open(STEREO_MAP, cv2.FILE_STORAGE_READ)
-
-stereoMapL_x = cv_file.getNode('stereoMapL_x').mat()
-stereoMapL_y = cv_file.getNode('stereoMapL_y').mat()
-stereoMapR_x = cv_file.getNode('stereoMapR_x').mat()
-stereoMapR_y = cv_file.getNode('stereoMapR_y').mat()
-
-cv_file.release()
-
 #-- App section-------------------------------------------------------------------------------------------------------
 app = Flask(__name__, template_folder=TEMPLATE_DIR)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -125,10 +112,6 @@ def TRIMessage(message):
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def UndistAndRect(img, stereomap_x, stereomap_y):
-    frame = cv2.remap(img, stereomap_x, stereomap_y, cv2.INTER_LANCZOS4, cv2.BORDER_CONSTANT, 0)
-    return frame
 
 def colorPresent(current_task, Colors):
     if current_task!=str("Azzurro") and current_task!=str("Grigio") and current_task!=str("Nero") \
@@ -197,22 +180,12 @@ def index():
 #dummy GET to try the connection over the TM robot side in the vision node settings
 def get(m_method):
     # user defined method
-    result = dict()
+    #result = dict()
 
     if m_method == 'status':
-        result = {
-            "result": "status",
-            "message": "im ok",
-            "result": None
-        }
-        
+        result = jsonresponse(0,0,0,0,0,0,"success",None)
     else:
-        result = {
-            "result": "fail",
-            "message": "wrong request",
-            "result": None
-        }
-        
+        result = jsonresponse(0,0,0,0,0,0,"fail",None)
     return result
 
 #-- POST -----------------------------------------------------------------------------------------------------------
@@ -227,10 +200,6 @@ def post(m_method):
     if model_id is None:
         TRIMessage('model_id is not set')
         result = jsonresponse(0,0,0,0,"model_id required",0,"fail","None")
-        #result={                    
-        #    "message": "fail",
-        #    "result": "model_id required"
-        #}
         return result
     
     #-- Saving image on pc
@@ -416,7 +385,7 @@ def post(m_method):
         #    "message": "no method",
         #    "result": None            
         #}
-        result = jsonresponse(0,0,0,0,"no method",0,"fail","None")   
+        result = jsonresponse(0,0,0,0,"No HTTP method",0,"fail","None")   
         with open(MAIN_FOLDER+'\\json.txt', 'a') as f:
             f.write('\n')
             f.write((str(result)))
